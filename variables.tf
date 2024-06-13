@@ -9,10 +9,8 @@ variable "name" {
   description = "The name of the this resource."
 
   validation {
-    condition     = can(regex("TODO", var.name))
-    error_message = "The name must be TODO." # TODO remove the example below once complete:
-    #condition     = can(regex("^[a-z0-9]{5,50}$", var.name))
-    #error_message = "The name must be between 5 and 50 characters long and can only contain lowercase letters and numbers."
+    condition     = can(regex("^[a-z0-9]{5,20}$", var.name))
+    error_message = "The name must be between 5 and 50 characters long and can only contain lowercase letters and numbers."
   }
 }
 
@@ -230,4 +228,16 @@ variable "tags" {
   type        = map(string)
   default     = null
   description = "(Optional) Tags of the resource."
+}
+
+variable "key_vault_id" {
+  type        = string
+  description = "The resource ID of the Key Vault to associate with the resource."
+  default = null
+}
+
+variable "storage_account_id" {
+  type        = string
+  description = "The resource ID of the Storage Account to associate with the resource."
+  default = null
 }
