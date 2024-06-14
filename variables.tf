@@ -226,12 +226,34 @@ variable "tags" {
   description = "(Optional) Tags of the resource."
 }
 
-variable "key_vault_id" {
+variable "shared_subnet_id" {
   type        = string
-  description = "The resource ID of the Key Vault to associate with the resource."
+  description = "The resource ID of the subnet to associate with the resource."
 }
 
-variable "storage_account_id" {
-  type        = string
-  description = "The resource ID of the Storage Account to associate with the resource."
+variable "is_private" {
+  type        = bool
+  description = "Specifies if the resource is private."
+  default     = false
+}
+variable "key_vault" {
+  type = object({
+    id   = string
+  })
+  default     = null
+  description = <<DESCRIPTION
+A map describing the Key Vault to associate with the resource. This includes the following properties:
+- `id` - The resource ID of the Key Vault.
+DESCRIPTION
+}
+
+variable "storage_account" {
+  type = object({
+    id   = string
+  })
+  default     = null
+  description = <<DESCRIPTION
+A map describing the Storage Account to associate with the resource. This includes the following properties:
+- `id` - The resource ID of the Storage Account.
+DESCRIPTION
 }

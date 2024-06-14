@@ -20,8 +20,6 @@ provider "azurerm" {
   }
 }
 
-data "azurerm_client_config" "current" {}
-
 ## Section to provide a random Azure region for the resource group
 # This allows us to randomize the region for the resource group.
 module "regions" {
@@ -49,34 +47,15 @@ resource "azurerm_resource_group" "this" {
 }
 
 locals {
-  name = module.naming.machine_learning_workspace.name_unique
+  name                                  = module.naming.machine_learning_workspace.name_unique
   core_services_vnet_subnets            = cidrsubnets("10.0.0.0/22", 6, 2, 4, 3)
   firewall_subnet_address_space         = local.core_services_vnet_subnets[1]
   bastion_subnet_address_prefix         = local.core_services_vnet_subnets[2]
   shared_services_subnet_address_prefix = local.core_services_vnet_subnets[3]
-  dns_zones =  toset([
+  dns_zones = toset([
     "privatelink.api.azureml.ms",
     "privatelink.notebooks.azure.net",
   ])
-}
-
-
-resource "azurerm_storage_account" "this" {
-  name                     = replace("${local.name}sa", "/[^a-zA-Z0-9]/", "")
-  location                 = var.location
-  resource_group_name      = azurerm_resource_group.this.name
-  account_tier             = "Standard"
-  account_replication_type = "GRS"
-}
-
-
-resource "azurerm_key_vault" "this" {
-  name                     = replace("${local.name}kv", "/[^a-zA-Z0-9]/", "")
-  location                 = var.location
-  resource_group_name      = azurerm_resource_group.this.name
-  tenant_id                = data.azurerm_client_config.current.tenant_id
-  sku_name                 = "premium"
-  purge_protection_enabled = true
 }
 
 resource "azurerm_virtual_network" "vnet" {
@@ -120,22 +99,21 @@ module "azureml" {
   location            = azurerm_resource_group.this.location
   name                = local.name
   resource_group_name = azurerm_resource_group.this.name
+  shared_subnet_id    = azurerm_subnet.shared.id
+  is_private          = true
 
-  storage_account_id = azurerm_storage_account.this.id
-  key_vault_id       = azurerm_key_vault.this.id
-  
   private_endpoints = {
     for dns_zone in local.dns_zones :
     dns_zone => {
-      name                          = "pe-${dns_zone}-${local.name}"
-      subnet_resource_id            = azurerm_subnet.shared.id
-      subresource_name              = dns_zone
-      private_dns_zone_resource_ids = [azurerm_private_dns_zone.this[dns_zone].id]
+      name                            = "pe-${dns_zone}-${local.name}"
+      subnet_resource_id              = azurerm_subnet.shared.id
+      subresource_name                = dns_zone
+      private_dns_zone_resource_ids   = [azurerm_private_dns_zone.this[dns_zone].id]
       private_service_connection_name = "psc-${dns_zone}-${local.name}"
       network_interface_name          = "nic-pe-${dns_zone}-${local.name}"
       inherit_lock                    = false
     }
   }
 
-  enable_telemetry = var.enable_telemetry 
+  enable_telemetry = var.enable_telemetry
 }
