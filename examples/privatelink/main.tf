@@ -118,7 +118,7 @@ module "azureml" {
   # source             = "Azure/avm-<res/ptn>-<name>/azurerm"
   # ...
   location            = azurerm_resource_group.this.location
-  name                = module.naming.machine_learning_workspace.name_unique
+  name                = local.name
   resource_group_name = azurerm_resource_group.this.name
 
   storage_account_id = azurerm_storage_account.this.id
