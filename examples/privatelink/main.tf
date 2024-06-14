@@ -131,8 +131,8 @@ module "azureml" {
       subnet_resource_id            = azurerm_subnet.shared.id
       subresource_name              = dns_zone
       private_dns_zone_resource_ids = [azurerm_private_dns_zone.this[dns_zone].id]
-      private_service_connection_name = "psc-${dns_zone}-${module.naming.machine_learning_workspace.name_unique}"
-      network_interface_name          = "nic-pe-${dns_zone}-${module.naming.machine_learning_workspace.name_unique}"
+      private_service_connection_name = "psc-${dns_zone}-${local.name}"
+      network_interface_name          = "nic-pe-${dns_zone}-${local.name}"
       inherit_lock                    = false
     }
   }
