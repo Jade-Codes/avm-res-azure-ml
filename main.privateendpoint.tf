@@ -12,7 +12,7 @@ resource "azurerm_private_endpoint" "this" {
     is_manual_connection           = false
     name                           = each.value.private_service_connection_name != null ? each.value.private_service_connection_name : "pse-${var.name}"
     private_connection_resource_id = azurerm_machine_learning_workspace.this.id
-    subresource_names              = [each.value.subresource_name]
+    subresource_names              = ["amlworkspace"]
   }
   dynamic "ip_configuration" {
     for_each = each.value.ip_configurations
@@ -21,7 +21,7 @@ resource "azurerm_private_endpoint" "this" {
       name               = ip_configuration.value.name
       private_ip_address = ip_configuration.value.private_ip_address
       member_name        = each.value.subresource_name
-      subresource_name   = each.value.subresource_name
+      subresource_name   = "amlworkspace"
     }
   }
   dynamic "private_dns_zone_group" {

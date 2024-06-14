@@ -7,11 +7,6 @@ variable "location" {
 variable "name" {
   type        = string
   description = "The name of the this resource."
-
-  validation {
-    condition     = can(regex("^[a-z0-9]{5,20}$", var.name))
-    error_message = "The name must be between 5 and 50 characters long and can only contain lowercase letters and numbers."
-  }
 }
 
 # This is required for most resource modules
@@ -151,6 +146,7 @@ variable "private_endpoints" {
     }), null)
     tags                                    = optional(map(string), null)
     subnet_resource_id                      = string
+    subresource_name                        = string
     private_dns_zone_group_name             = optional(string, "default")
     private_dns_zone_resource_ids           = optional(set(string), [])
     application_security_group_associations = optional(map(string), {})
@@ -233,11 +229,9 @@ variable "tags" {
 variable "key_vault_id" {
   type        = string
   description = "The resource ID of the Key Vault to associate with the resource."
-  default = null
 }
 
 variable "storage_account_id" {
   type        = string
   description = "The resource ID of the Storage Account to associate with the resource."
-  default = null
 }
