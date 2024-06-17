@@ -238,7 +238,7 @@ variable "is_private" {
 }
 variable "associated_key_vault" {
   type = object({
-    resource_id   = string
+    resource_id = string
   })
   default     = null
   description = <<DESCRIPTION
@@ -248,7 +248,7 @@ DESCRIPTION
 }
 
 variable "key_vault" {
-  type        = object({
+  type = object({
     private_dns_zone_resource_map = optional(map(set(string)), null)
   })
   default     = null
@@ -260,7 +260,7 @@ DESCRIPTION
 
 variable "associated_storage_account" {
   type = object({
-    resource_id   = string
+    resource_id = string
   })
   default     = null
   description = <<DESCRIPTION
@@ -270,7 +270,7 @@ DESCRIPTION
 }
 
 variable "storage_account" {
-  type        = object({
+  type = object({
     private_dns_zone_resource_map = optional(map(set(string)), null)
   })
   default     = null

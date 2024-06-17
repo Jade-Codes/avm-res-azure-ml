@@ -20,7 +20,7 @@ module "avm_res_keyvault_vault" {
       inherit_lock                    = false
     }
   } : null
-  
-  
+
+
   count = var.associated_key_vault == null ? 1 : 0
 }

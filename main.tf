@@ -10,7 +10,7 @@ resource "azurerm_machine_learning_workspace" "this" {
   location                = var.location
   resource_group_name     = var.resource_group_name
   application_insights_id = azurerm_application_insights.this.id
-  key_vault_id            = var.associated_key_vault == null ? module.avm_res_keyvault_vault[0].resource_id : var.associated_key_vault.resource_id 
+  key_vault_id            = var.associated_key_vault == null ? module.avm_res_keyvault_vault[0].resource_id : var.associated_key_vault.resource_id
   storage_account_id      = var.associated_storage_account == null ? module.avm_res_storage_storageaccount[0].resource_id : var.associated_storage_account.resource_id
 
   identity {
