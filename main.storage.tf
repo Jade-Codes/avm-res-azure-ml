@@ -13,16 +13,14 @@ module "avm_res_storage_storageaccount" {
   }
 
   private_endpoints = var.is_private ? {
-    for endpoint in var.storage_account.endpoints :
-    endpoint => {
-      # the name must be set to avoid conflicting resources.
-      name                          = "pe-${endpoint}-${var.name}"
+    for key, value in var.storage_account.private_dns_zone_resource_map :
+    key => {
+      name                          = "pe-${key}-${var.name}"
       subnet_resource_id            = var.shared_subnet_id
-      subresource_name              = endpoint
-      private_dns_zone_resource_ids = var.storage_account.private_dns_zone_resource_ids
-      # these are optional but illustrate making well-aligned service connection & NIC names.
-      private_service_connection_name = "psc-${endpoint}-${var.name}"
-      network_interface_name          = "nic-pe-${endpoint}-${var.name}"
+      subresource_name              = key
+      private_dns_zone_resource_ids = value
+      private_service_connection_name = "psc-${key}-${var.name}"
+      network_interface_name          = "nic-pe-${key}-${var.name}"
       inherit_lock                    = false
     }
   } : null

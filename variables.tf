@@ -249,14 +249,12 @@ DESCRIPTION
 
 variable "key_vault" {
   type        = object({
-    endpoints = set(string)
-    private_dns_zone_resource_ids = optional(set(string), null)
+    private_dns_zone_resource_map = optional(map(set(string)), null)
   })
   default     = null
   description = <<DESCRIPTION
 A map describing the Key Vault to create the private endpoint connection to. This includes the following properties:
-- `endpoints` - A set of endpoints to create private endpoint connections to. Possible values are `vault`.
-- `private_dns_zone_resource_ids` - (Optional) A set of resource IDs of private DNS zones to associate with the private endpoint. If not set, no zone groups will be created and the private endpoint will not be associated with any private DNS zones. DNS records must be managed external to this module.
+- `private_dns_zone_resource_map` - A map of private DNS zones to associate with the private endpoint.
 DESCRIPTION
 }
 
@@ -273,13 +271,11 @@ DESCRIPTION
 
 variable "storage_account" {
   type        = object({
-    endpoints = set(string)
-    private_dns_zone_resource_ids = optional(set(string), null)
+    private_dns_zone_resource_map = optional(map(set(string)), null)
   })
   default     = null
   description = <<DESCRIPTION
 A map describing the Storage Account to create the private endpoint connection to. This includes the following properties:
-- `endpoints` - A set of endpoints to create private endpoint connections to. Possible values are `blob`, `queue`, `table`, `file`.
-- `private_dns_zone_resource_ids` - (Optional) A set of resource IDs of private DNS zones to associate with the private endpoint. If not set, no zone groups will be created and the private endpoint will not be associated with any private DNS zones. DNS records must be managed external to this module.
+- `private_dns_zone_resource_map` - A map of private DNS zones to associate with the private endpoint.
 DESCRIPTION
 }

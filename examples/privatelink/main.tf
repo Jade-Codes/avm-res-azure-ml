@@ -129,6 +129,20 @@ resource "azurerm_private_dns_zone_virtual_network_link" "private_links_storage"
   virtual_network_id    = azurerm_virtual_network.vnet.id
 }
 
+locals {
+  azureml_dns_zones_map = {
+    for endpoint in local.azureml_dns_zones : endpoint => [azurerm_private_dns_zone.this[endpoint].id]
+  }
+
+  key_vault_dnz_zones_map = {
+    for endpoint in local.key_vault_endpoints : endpoint => [azurerm_private_dns_zone.key_vault_dns_zones[endpoint].id]
+  }
+
+  storage_account_dnz_zones_map = {
+    for endpoint in local.storage_account_endpoints : endpoint => [azurerm_private_dns_zone.storage_dns_zones[endpoint].id]
+  }
+}
+
 # This is the module call
 # Do not specify location here due to the randomization above.
 # Leaving location as `null` will cause the module to use the resource group location
@@ -144,29 +158,24 @@ module "azureml" {
   is_private          = true
 
   private_endpoints = {
-    for dns_zone in local.azureml_dns_zones :
-    dns_zone => {
-      name                            = "pe-${dns_zone}-${local.name}"
+    for key, value in local.azureml_dns_zones_map :
+    key => {
+      name                            = "pe-${key}-${local.name}"
       subnet_resource_id              = azurerm_subnet.shared.id
-      subresource_name                = dns_zone
-      private_dns_zone_resource_ids   = [azurerm_private_dns_zone.this[dns_zone].id]
-      private_service_connection_name = "psc-${dns_zone}-${local.name}"
-      network_interface_name          = "nic-pe-${dns_zone}-${local.name}"
+      subresource_name                = key
+      private_dns_zone_resource_ids   = value
+      private_service_connection_name = "psc-${key}-${local.name}"
+      network_interface_name          = "nic-pe-${key}-${local.name}"
       inherit_lock                    = false
     }
   }
 
   key_vault = {
-    endpoints = local.key_vault_endpoints
-    private_dns_zone_resource_ids = [azurerm_private_dns_zone.key_vault_dns_zones["vaultcore"].id]
+    private_dns_zone_resource_map = local.key_vault_dnz_zones_map
   }
 
   storage_account = {
-    endpoints = local.storage_account_endpoints
-    private_dns_zone_resource_ids = [azurerm_private_dns_zone.storage_dns_zones["blob"].id, 
-                                      azurerm_private_dns_zone.storage_dns_zones["file"].id, 
-                                      azurerm_private_dns_zone.storage_dns_zones["queue"].id, 
-                                      azurerm_private_dns_zone.storage_dns_zones["table"].id]
+    private_dns_zone_resource_map = local.storage_account_dnz_zones_map
   }
 
   enable_telemetry = var.enable_telemetry

@@ -9,14 +9,14 @@ module "avm_res_keyvault_vault" {
   public_network_access_enabled = var.is_private ? false : true
 
   private_endpoints = var.is_private ? {
-    for endpoint in var.key_vault.endpoints :
-    endpoint => {
-      name                            = "pe-${endpoint}-${var.name}"
+    for key, value in var.key_vault.private_dns_zone_resource_map :
+    key => {
+      name                            = "pe-${key}-${var.name}"
       subnet_resource_id              = var.shared_subnet_id
-      subresource_name                = endpoint
-      private_dns_zone_resource_ids   = var.key_vault.private_dns_zone_resource_ids
-      private_service_connection_name = "psc-${endpoint}-${var.name}"
-      network_interface_name          = "nic-pe-${endpoint}-${var.name}"
+      subresource_name                = key
+      private_dns_zone_resource_ids   = value
+      private_service_connection_name = "psc-${key}-${var.name}"
+      network_interface_name          = "nic-pe-${key}-${var.name}"
       inherit_lock                    = false
     }
   } : null
