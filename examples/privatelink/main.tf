@@ -52,9 +52,18 @@ locals {
   firewall_subnet_address_space         = local.core_services_vnet_subnets[1]
   bastion_subnet_address_prefix         = local.core_services_vnet_subnets[2]
   shared_services_subnet_address_prefix = local.core_services_vnet_subnets[3]
-  dns_zones = toset([
+  azureml_dns_zones = toset([
     "privatelink.api.azureml.ms",
     "privatelink.notebooks.azure.net",
+  ])
+  key_vault_endpoints = toset([
+    "vaultcore",
+  ])
+  storage_account_endpoints = toset([
+    "blob",
+    "file",
+    "queue",
+    "table",
   ])
 }
 
@@ -73,9 +82,23 @@ resource "azurerm_subnet" "shared" {
 }
 
 resource "azurerm_private_dns_zone" "this" {
-  for_each = local.dns_zones
+  for_each = local.azureml_dns_zones
 
   name                = each.value
+  resource_group_name = azurerm_resource_group.this.name
+}
+
+resource "azurerm_private_dns_zone" "key_vault_dns_zones" {
+  for_each = local.key_vault_endpoints
+
+  name                = "privatelink.${each.value}.azure.net"
+  resource_group_name = azurerm_resource_group.this.name
+}
+
+resource "azurerm_private_dns_zone" "storage_dns_zones" {
+  for_each = local.storage_account_endpoints
+
+  name                = "privatelink.${each.value}.core.windows.net"
   resource_group_name = azurerm_resource_group.this.name
 }
 
@@ -84,6 +107,24 @@ resource "azurerm_private_dns_zone_virtual_network_link" "private_links" {
 
   name                  = "${each.key}_${azurerm_virtual_network.vnet.name}-link"
   private_dns_zone_name = azurerm_private_dns_zone.this[each.key].name
+  resource_group_name   = azurerm_resource_group.this.name
+  virtual_network_id    = azurerm_virtual_network.vnet.id
+}
+
+resource "azurerm_private_dns_zone_virtual_network_link" "private_links_keyvault" {
+  for_each = azurerm_private_dns_zone.key_vault_dns_zones
+
+  name                  = "${each.key}_${azurerm_virtual_network.vnet.name}-link"
+  private_dns_zone_name = azurerm_private_dns_zone.key_vault_dns_zones[each.key].name
+  resource_group_name   = azurerm_resource_group.this.name
+  virtual_network_id    = azurerm_virtual_network.vnet.id
+}
+
+resource "azurerm_private_dns_zone_virtual_network_link" "private_links_storage" {
+  for_each = azurerm_private_dns_zone.storage_dns_zones
+
+  name                  = "${each.key}_${azurerm_virtual_network.vnet.name}-link"
+  private_dns_zone_name = azurerm_private_dns_zone.storage_dns_zones[each.key].name
   resource_group_name   = azurerm_resource_group.this.name
   virtual_network_id    = azurerm_virtual_network.vnet.id
 }
@@ -103,7 +144,7 @@ module "azureml" {
   is_private          = true
 
   private_endpoints = {
-    for dns_zone in local.dns_zones :
+    for dns_zone in local.azureml_dns_zones :
     dns_zone => {
       name                            = "pe-${dns_zone}-${local.name}"
       subnet_resource_id              = azurerm_subnet.shared.id
@@ -113,6 +154,19 @@ module "azureml" {
       network_interface_name          = "nic-pe-${dns_zone}-${local.name}"
       inherit_lock                    = false
     }
+  }
+
+  key_vault = {
+    endpoints = local.key_vault_endpoints
+    private_dns_zone_resource_ids = [azurerm_private_dns_zone.key_vault_dns_zones["vaultcore"].id]
+  }
+
+  storage_account = {
+    endpoints = local.storage_account_endpoints
+    private_dns_zone_resource_ids = [azurerm_private_dns_zone.storage_dns_zones["blob"].id, 
+                                      azurerm_private_dns_zone.storage_dns_zones["file"].id, 
+                                      azurerm_private_dns_zone.storage_dns_zones["queue"].id, 
+                                      azurerm_private_dns_zone.storage_dns_zones["table"].id]
   }
 
   enable_telemetry = var.enable_telemetry

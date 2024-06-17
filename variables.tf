@@ -236,24 +236,50 @@ variable "is_private" {
   description = "Specifies if the resource is private."
   default     = false
 }
-variable "key_vault" {
+variable "associated_key_vault" {
   type = object({
-    id   = string
+    resource_id   = string
   })
   default     = null
   description = <<DESCRIPTION
 A map describing the Key Vault to associate with the resource. This includes the following properties:
-- `id` - The resource ID of the Key Vault.
+- `resource_id` - The resource ID of the Key Vault.
 DESCRIPTION
 }
 
-variable "storage_account" {
+variable "key_vault" {
+  type        = object({
+    endpoints = set(string)
+    private_dns_zone_resource_ids = optional(set(string), null)
+  })
+  default     = null
+  description = <<DESCRIPTION
+A map describing the Key Vault to create the private endpoint connection to. This includes the following properties:
+- `endpoints` - A set of endpoints to create private endpoint connections to. Possible values are `vault`.
+- `private_dns_zone_resource_ids` - (Optional) A set of resource IDs of private DNS zones to associate with the private endpoint. If not set, no zone groups will be created and the private endpoint will not be associated with any private DNS zones. DNS records must be managed external to this module.
+DESCRIPTION
+}
+
+variable "associated_storage_account" {
   type = object({
-    id   = string
+    resource_id   = string
   })
   default     = null
   description = <<DESCRIPTION
 A map describing the Storage Account to associate with the resource. This includes the following properties:
-- `id` - The resource ID of the Storage Account.
+- `resource_id` - The resource ID of the Storage Account.
+DESCRIPTION
+}
+
+variable "storage_account" {
+  type        = object({
+    endpoints = set(string)
+    private_dns_zone_resource_ids = optional(set(string), null)
+  })
+  default     = null
+  description = <<DESCRIPTION
+A map describing the Storage Account to create the private endpoint connection to. This includes the following properties:
+- `endpoints` - A set of endpoints to create private endpoint connections to. Possible values are `blob`, `queue`, `table`, `file`.
+- `private_dns_zone_resource_ids` - (Optional) A set of resource IDs of private DNS zones to associate with the private endpoint. If not set, no zone groups will be created and the private endpoint will not be associated with any private DNS zones. DNS records must be managed external to this module.
 DESCRIPTION
 }
