@@ -1,7 +1,8 @@
 module "avm_res_storage_storageaccount" {
-  source           = "Azure/avm-res-storage-storageaccount/azurerm"
-  enable_telemetry = var.enable_telemetry
-  // regex to remove invalid characters from the name
+  source  = "Azure/avm-res-storage-storageaccount/azurerm"
+  version = "~> 0.1"
+
+  enable_telemetry              = var.enable_telemetry
   name                          = local.storage_account_name
   resource_group_name           = var.resource_group_name
   location                      = var.location
