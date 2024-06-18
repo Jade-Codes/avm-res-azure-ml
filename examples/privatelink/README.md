@@ -1,7 +1,7 @@
 <!-- BEGIN_TF_DOCS -->
 # Default example
 
-This deploys the module in its simplest form.
+This deploys the module with a private link.
 
 ```hcl
 terraform {
@@ -19,9 +19,12 @@ terraform {
 }
 
 provider "azurerm" {
-  features {}
+  features {
+    key_vault {
+      purge_soft_delete_on_destroy = false
+    }
+  }
 }
-
 
 ## Section to provide a random Azure region for the resource group
 # This allows us to randomize the region for the resource group.
@@ -45,23 +48,139 @@ module "naming" {
 
 # This is required for resource modules
 resource "azurerm_resource_group" "this" {
-  location = module.regions.regions[random_integer.region_index.result].name
+  location = var.location
   name     = module.naming.resource_group.name_unique
+}
+
+locals {
+  azureml_dns_zones = toset([
+    "privatelink.api.azureml.ms",
+    "privatelink.notebooks.azure.net",
+  ])
+  core_services_vnet_subnets = cidrsubnets("10.0.0.0/22", 6, 2, 4, 3)
+  key_vault_endpoints = toset([
+    "vaultcore",
+  ])
+  name                                  = module.naming.machine_learning_workspace.name_unique
+  shared_services_subnet_address_prefix = local.core_services_vnet_subnets[3]
+  storage_account_endpoints = toset([
+    "blob",
+    "file",
+    "queue",
+    "table",
+  ])
+}
+
+resource "azurerm_virtual_network" "vnet" {
+  address_space       = ["10.0.0.0/22"]
+  location            = azurerm_resource_group.this.location
+  name                = module.naming.virtual_network.name_unique
+  resource_group_name = azurerm_resource_group.this.name
+}
+
+resource "azurerm_subnet" "shared" {
+  address_prefixes     = [local.shared_services_subnet_address_prefix]
+  name                 = "SharedSubnet"
+  resource_group_name  = azurerm_resource_group.this.name
+  virtual_network_name = azurerm_virtual_network.vnet.name
+}
+
+resource "azurerm_private_dns_zone" "this" {
+  for_each = local.azureml_dns_zones
+
+  name                = each.value
+  resource_group_name = azurerm_resource_group.this.name
+}
+
+resource "azurerm_private_dns_zone" "key_vault_dns_zones" {
+  for_each = local.key_vault_endpoints
+
+  name                = "privatelink.${each.value}.azure.net"
+  resource_group_name = azurerm_resource_group.this.name
+}
+
+resource "azurerm_private_dns_zone" "storage_dns_zones" {
+  for_each = local.storage_account_endpoints
+
+  name                = "privatelink.${each.value}.core.windows.net"
+  resource_group_name = azurerm_resource_group.this.name
+}
+
+resource "azurerm_private_dns_zone_virtual_network_link" "private_links" {
+  for_each = azurerm_private_dns_zone.this
+
+  name                  = "${each.key}_${azurerm_virtual_network.vnet.name}-link"
+  private_dns_zone_name = azurerm_private_dns_zone.this[each.key].name
+  resource_group_name   = azurerm_resource_group.this.name
+  virtual_network_id    = azurerm_virtual_network.vnet.id
+}
+
+resource "azurerm_private_dns_zone_virtual_network_link" "private_links_keyvault" {
+  for_each = azurerm_private_dns_zone.key_vault_dns_zones
+
+  name                  = "${each.key}_${azurerm_virtual_network.vnet.name}-link"
+  private_dns_zone_name = azurerm_private_dns_zone.key_vault_dns_zones[each.key].name
+  resource_group_name   = azurerm_resource_group.this.name
+  virtual_network_id    = azurerm_virtual_network.vnet.id
+}
+
+resource "azurerm_private_dns_zone_virtual_network_link" "private_links_storage" {
+  for_each = azurerm_private_dns_zone.storage_dns_zones
+
+  name                  = "${each.key}_${azurerm_virtual_network.vnet.name}-link"
+  private_dns_zone_name = azurerm_private_dns_zone.storage_dns_zones[each.key].name
+  resource_group_name   = azurerm_resource_group.this.name
+  virtual_network_id    = azurerm_virtual_network.vnet.id
+}
+
+locals {
+  azureml_dns_zones_map = {
+    for endpoint in local.azureml_dns_zones : endpoint => [azurerm_private_dns_zone.this[endpoint].id]
+  }
+  key_vault_dnz_zones_map = {
+    for endpoint in local.key_vault_endpoints : endpoint => [azurerm_private_dns_zone.key_vault_dns_zones[endpoint].id]
+  }
+  storage_account_dnz_zones_map = {
+    for endpoint in local.storage_account_endpoints : endpoint => [azurerm_private_dns_zone.storage_dns_zones[endpoint].id]
+  }
 }
 
 # This is the module call
 # Do not specify location here due to the randomization above.
 # Leaving location as `null` will cause the module to use the resource group location
 # with a data source.
-module "test" {
+module "azureml" {
   source = "../../"
   # source             = "Azure/avm-<res/ptn>-<name>/azurerm"
   # ...
   location            = azurerm_resource_group.this.location
-  name                = "TODO" # TODO update with module.naming.<RESOURCE_TYPE>.name_unique
+  name                = local.name
   resource_group_name = azurerm_resource_group.this.name
+  shared_subnet_id    = azurerm_subnet.shared.id
+  is_private          = true
 
-  enable_telemetry = var.enable_telemetry # see variables.tf
+  private_endpoints = {
+    for key, value in local.azureml_dns_zones_map :
+    key => {
+      name                            = "pe-${key}-${local.name}"
+      subnet_resource_id              = azurerm_subnet.shared.id
+      subresource_name                = key
+      private_dns_zone_resource_ids   = value
+      private_service_connection_name = "psc-${key}-${local.name}"
+      network_interface_name          = "nic-pe-${key}-${local.name}"
+      inherit_lock                    = false
+    }
+  }
+
+  key_vault = {
+    private_dns_zone_resource_map = local.key_vault_dnz_zones_map
+  }
+
+  storage_account = {
+    private_dns_zone_resource_map = local.storage_account_dnz_zones_map
+  }
+
+  enable_telemetry = var.enable_telemetry
 }
 ```
 
@@ -88,7 +207,15 @@ The following providers are used by this module:
 
 The following resources are used by this module:
 
+- [azurerm_private_dns_zone.key_vault_dns_zones](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/private_dns_zone) (resource)
+- [azurerm_private_dns_zone.storage_dns_zones](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/private_dns_zone) (resource)
+- [azurerm_private_dns_zone.this](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/private_dns_zone) (resource)
+- [azurerm_private_dns_zone_virtual_network_link.private_links](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/private_dns_zone_virtual_network_link) (resource)
+- [azurerm_private_dns_zone_virtual_network_link.private_links_keyvault](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/private_dns_zone_virtual_network_link) (resource)
+- [azurerm_private_dns_zone_virtual_network_link.private_links_storage](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/private_dns_zone_virtual_network_link) (resource)
 - [azurerm_resource_group.this](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/resource_group) (resource)
+- [azurerm_subnet.shared](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/subnet) (resource)
+- [azurerm_virtual_network.vnet](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/virtual_network) (resource)
 - [random_integer.region_index](https://registry.terraform.io/providers/hashicorp/random/latest/docs/resources/integer) (resource)
 
 <!-- markdownlint-disable MD013 -->
@@ -110,6 +237,14 @@ Type: `bool`
 
 Default: `true`
 
+### <a name="input_location"></a> [location](#input\_location)
+
+Description: The location for the resources.
+
+Type: `string`
+
+Default: `"uksouth"`
+
 ## Outputs
 
 No outputs.
@@ -117,6 +252,12 @@ No outputs.
 ## Modules
 
 The following Modules are called:
+
+### <a name="module_azureml"></a> [azureml](#module\_azureml)
+
+Source: ../../
+
+Version:
 
 ### <a name="module_naming"></a> [naming](#module\_naming)
 
@@ -129,12 +270,6 @@ Version: ~> 0.3
 Source: Azure/regions/azurerm
 
 Version: ~> 0.3
-
-### <a name="module_test"></a> [test](#module\_test)
-
-Source: ../../
-
-Version:
 
 <!-- markdownlint-disable-next-line MD041 -->
 ## Data Collection
