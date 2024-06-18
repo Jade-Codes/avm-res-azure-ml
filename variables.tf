@@ -182,17 +182,6 @@ DESCRIPTION
   nullable    = false
 }
 
-# This variable is used to determine if the private_dns_zone_group block should be included,
-# or if it is to be managed externally, e.g. using Azure Policy.
-# https://github.com/Azure/terraform-azurerm-avm-res-keyvault-vault/issues/32
-# Alternatively you can use AzAPI, which does not have this issue.
-variable "private_endpoints_manage_dns_zone_group" {
-  type        = bool
-  default     = true
-  description = "Whether to manage private DNS zone groups with this module. If set to false, you must manage private DNS zone groups externally, e.g. using Azure Policy."
-  nullable    = false
-}
-
 variable "role_assignments" {
   type = map(object({
     role_definition_id_or_name             = string
@@ -242,7 +231,7 @@ variable "associated_key_vault" {
   })
   default     = null
   description = <<DESCRIPTION
-A map describing the Key Vault to associate with the resource. This includes the following properties:
+An object describing the Key Vault to associate with the resource. This includes the following properties:
 - `resource_id` - The resource ID of the Key Vault.
 DESCRIPTION
 }
@@ -253,7 +242,7 @@ variable "key_vault" {
   })
   default     = null
   description = <<DESCRIPTION
-A map describing the Key Vault to create the private endpoint connection to. This includes the following properties:
+An object describing the Key Vault to create the private endpoint connection to. This includes the following properties:
 - `private_dns_zone_resource_map` - A map of private DNS zones to associate with the private endpoint.
 DESCRIPTION
 }
@@ -264,7 +253,7 @@ variable "associated_storage_account" {
   })
   default     = null
   description = <<DESCRIPTION
-A map describing the Storage Account to associate with the resource. This includes the following properties:
+An object describing the Storage Account to associate with the resource. This includes the following properties:
 - `resource_id` - The resource ID of the Storage Account.
 DESCRIPTION
 }
@@ -275,7 +264,7 @@ variable "storage_account" {
   })
   default     = null
   description = <<DESCRIPTION
-A map describing the Storage Account to create the private endpoint connection to. This includes the following properties:
+An object describing the Storage Account to create the private endpoint connection to. This includes the following properties:
 - `private_dns_zone_resource_map` - A map of private DNS zones to associate with the private endpoint.
 DESCRIPTION
 }

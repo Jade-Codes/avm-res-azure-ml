@@ -94,7 +94,7 @@ The following resources are used by this module:
 <!-- markdownlint-disable MD013 -->
 ## Required Inputs
 
-No required inputs.
+The following input variables are required:
 
 ## Optional Inputs
 
@@ -109,6 +109,14 @@ If it is set to false, then no telemetry will be collected.
 Type: `bool`
 
 Default: `true`
+
+### <a name = "input_location"></a> [location]
+
+Description: This variable will be the location the resources are stored.
+
+Type: `string`
+
+Default: `uksouth`
 
 ## Outputs
 
@@ -130,7 +138,7 @@ Source: Azure/regions/azurerm
 
 Version: ~> 0.3
 
-### <a name="module_test"></a> [test](#module\_test)
+### <a name="module_azureml"></a> [test](#module\_azureml)
 
 Source: ../../
 

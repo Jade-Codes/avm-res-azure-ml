@@ -74,6 +74,12 @@ Description: The resource group where the resources will be deployed.
 
 Type: `string`
 
+### <a name="input_shared_subnet_id"></a> [shared\_subnet\_id](input\_shared\_subnet\_id)
+
+Description: The resource ID of the subnet to associate with the resource.
+
+Type: `string`
+
 ## Optional Inputs
 
 The following input variables are optional (have default values):
@@ -238,14 +244,6 @@ map(object({
 
 Default: `{}`
 
-### <a name="input_private_endpoints_manage_dns_zone_group"></a> [private\_endpoints\_manage\_dns\_zone\_group](#input\_private\_endpoints\_manage\_dns\_zone\_group)
-
-Description: Whether to manage private DNS zone groups with this module. If set to false, you must manage private DNS zone groups externally, e.g. using Azure Policy.
-
-Type: `bool`
-
-Default: `true`
-
 ### <a name="input_role_assignments"></a> [role\_assignments](#input\_role\_assignments)
 
 Description: A map of role assignments to create on this resource. The map key is deliberately arbitrary to avoid issues where map keys maybe unknown at plan time.
@@ -283,6 +281,75 @@ Type: `map(string)`
 
 Default: `null`
 
+### <a name="input_is_private"></a> [is\_private](#input\_is\_private)
+
+Description: Specifies if the resource is private
+
+Type: `bool`
+
+Default: `false`
+
+
+### <a name="input_associated_key_vault"></a> [associated\_key\_vault](#input\_associated\_key\_vault)
+
+Description: An object describing the Key Vault to associate with the resource. This includes the following properties:
+- `resource_id` - The resource ID of the Key Vault.
+
+Type: 
+
+```hcl
+  object({
+    resource_id = string
+  })
+```
+
+Default: `null`
+
+### <a name="input_key_vault"></a> [key\_vault](#input\_key\_vault)
+
+Description: An object describing the Key Vault to create the private endpoint connection to. This includes the following properties:
+- `private_dns_zone_resource_map` - A map of private DNS zones to associate with the private endpoint.
+
+Type: 
+
+```hcl
+  type = object({
+    private_dns_zone_resource_map = optional(map(set(string)), null)
+  })
+```
+
+Default: `null`
+
+### <a name="input_associated_storage_account"></a> [associated\_storage\_account](#input\_associated\_storage\_account)
+
+Description: An object describing the Storage Account to associate with the resource. This includes the following properties:
+- `resource_id` - The resource ID of the Storage Account.
+
+Type: 
+
+```hcl
+  object({
+    resource_id = string
+  })
+```
+
+Default: `null`
+
+### <a name="input_storage_account"></a> [storage\_account](#input\_storage\_account)
+
+Description: An object describing the Storage Account to create the private endpoint connection to. This includes the following properties:
+- `private_dns_zone_resource_map` - A map of private DNS zones to associate with the private endpoint.
+
+Type: 
+
+```hcl
+  type = object({
+    private_dns_zone_resource_map = optional(map(set(string)), null)
+  })
+```
+
+Default: `null`
+
 ## Outputs
 
 The following outputs are exported:
@@ -293,7 +360,11 @@ Description:   A map of the private endpoints created.
 
 ### <a name="output_resource"></a> [resource](#output\_resource)
 
-Description: This is the full output for the resource.
+Description: This is the full output for the machine learning workspace.
+
+### <a name="output_resource_id"></a> [resource\_id](#output\_resource\_id)
+
+Description: The ID of the machine learning workspace.
 
 ## Modules
 
