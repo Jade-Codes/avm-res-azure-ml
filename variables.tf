@@ -15,6 +15,33 @@ variable "resource_group_name" {
   description = "The resource group where the resources will be deployed."
 }
 
+variable "shared_subnet_id" {
+  type        = string
+  description = "The resource ID of the subnet to associate with the resource."
+}
+
+variable "associated_key_vault" {
+  type = object({
+    resource_id = string
+  })
+  default     = null
+  description = <<DESCRIPTION
+An object describing the Key Vault to associate with the resource. This includes the following properties:
+- `resource_id` - The resource ID of the Key Vault.
+DESCRIPTION
+}
+
+variable "associated_storage_account" {
+  type = object({
+    resource_id = string
+  })
+  default     = null
+  description = <<DESCRIPTION
+An object describing the Storage Account to associate with the resource. This includes the following properties:
+- `resource_id` - The resource ID of the Storage Account.
+DESCRIPTION
+}
+
 # required AVM interfaces
 # remove only if not supported by the resource
 # tflint-ignore: terraform_unused_declarations
@@ -90,6 +117,23 @@ variable "enable_telemetry" {
 This variable controls whether or not telemetry is enabled for the module.
 For more information see <https://aka.ms/avm/telemetryinfo>.
 If it is set to false, then no telemetry will be collected.
+DESCRIPTION
+}
+
+variable "is_private" {
+  type        = bool
+  default     = false
+  description = "Specifies if the resource is private."
+}
+
+variable "key_vault" {
+  type = object({
+    private_dns_zone_resource_map = optional(map(set(string)), null)
+  })
+  default     = null
+  description = <<DESCRIPTION
+An object describing the Key Vault to create the private endpoint connection to. This includes the following properties:
+- `private_dns_zone_resource_map` - A map of private DNS zones to associate with the private endpoint.
 DESCRIPTION
 }
 
@@ -208,56 +252,6 @@ DESCRIPTION
   nullable    = false
 }
 
-# tflint-ignore: terraform_unused_declarations
-variable "tags" {
-  type        = map(string)
-  default     = null
-  description = "(Optional) Tags of the resource."
-}
-
-variable "shared_subnet_id" {
-  type        = string
-  description = "The resource ID of the subnet to associate with the resource."
-}
-
-variable "is_private" {
-  type        = bool
-  description = "Specifies if the resource is private."
-  default     = false
-}
-variable "associated_key_vault" {
-  type = object({
-    resource_id = string
-  })
-  default     = null
-  description = <<DESCRIPTION
-An object describing the Key Vault to associate with the resource. This includes the following properties:
-- `resource_id` - The resource ID of the Key Vault.
-DESCRIPTION
-}
-
-variable "key_vault" {
-  type = object({
-    private_dns_zone_resource_map = optional(map(set(string)), null)
-  })
-  default     = null
-  description = <<DESCRIPTION
-An object describing the Key Vault to create the private endpoint connection to. This includes the following properties:
-- `private_dns_zone_resource_map` - A map of private DNS zones to associate with the private endpoint.
-DESCRIPTION
-}
-
-variable "associated_storage_account" {
-  type = object({
-    resource_id = string
-  })
-  default     = null
-  description = <<DESCRIPTION
-An object describing the Storage Account to associate with the resource. This includes the following properties:
-- `resource_id` - The resource ID of the Storage Account.
-DESCRIPTION
-}
-
 variable "storage_account" {
   type = object({
     private_dns_zone_resource_map = optional(map(set(string)), null)
@@ -267,4 +261,11 @@ variable "storage_account" {
 An object describing the Storage Account to create the private endpoint connection to. This includes the following properties:
 - `private_dns_zone_resource_map` - A map of private DNS zones to associate with the private endpoint.
 DESCRIPTION
+}
+
+# tflint-ignore: terraform_unused_declarations
+variable "tags" {
+  type        = map(string)
+  default     = null
+  description = "(Optional) Tags of the resource."
 }

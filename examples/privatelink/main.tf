@@ -47,18 +47,18 @@ resource "azurerm_resource_group" "this" {
 }
 
 locals {
-  name                                  = module.naming.machine_learning_workspace.name_unique
-  core_services_vnet_subnets            = cidrsubnets("10.0.0.0/22", 6, 2, 4, 3)
-  firewall_subnet_address_space         = local.core_services_vnet_subnets[1]
-  bastion_subnet_address_prefix         = local.core_services_vnet_subnets[2]
-  shared_services_subnet_address_prefix = local.core_services_vnet_subnets[3]
   azureml_dns_zones = toset([
     "privatelink.api.azureml.ms",
     "privatelink.notebooks.azure.net",
   ])
+  bastion_subnet_address_prefix = local.core_services_vnet_subnets[2]
+  core_services_vnet_subnets    = cidrsubnets("10.0.0.0/22", 6, 2, 4, 3)
+  firewall_subnet_address_space = local.core_services_vnet_subnets[1]
   key_vault_endpoints = toset([
     "vaultcore",
   ])
+  name                                  = module.naming.machine_learning_workspace.name_unique
+  shared_services_subnet_address_prefix = local.core_services_vnet_subnets[3]
   storage_account_endpoints = toset([
     "blob",
     "file",
@@ -75,10 +75,10 @@ resource "azurerm_virtual_network" "vnet" {
 }
 
 resource "azurerm_subnet" "shared" {
-  name                 = "SharedSubnet"
-  virtual_network_name = azurerm_virtual_network.vnet.name
-  resource_group_name  = azurerm_resource_group.this.name
   address_prefixes     = [local.shared_services_subnet_address_prefix]
+  name                 = "SharedSubnet"
+  resource_group_name  = azurerm_resource_group.this.name
+  virtual_network_name = azurerm_virtual_network.vnet.name
 }
 
 resource "azurerm_private_dns_zone" "this" {
@@ -133,11 +133,9 @@ locals {
   azureml_dns_zones_map = {
     for endpoint in local.azureml_dns_zones : endpoint => [azurerm_private_dns_zone.this[endpoint].id]
   }
-
   key_vault_dnz_zones_map = {
     for endpoint in local.key_vault_endpoints : endpoint => [azurerm_private_dns_zone.key_vault_dns_zones[endpoint].id]
   }
-
   storage_account_dnz_zones_map = {
     for endpoint in local.storage_account_endpoints : endpoint => [azurerm_private_dns_zone.storage_dns_zones[endpoint].id]
   }
