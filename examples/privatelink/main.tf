@@ -51,9 +51,7 @@ locals {
     "privatelink.api.azureml.ms",
     "privatelink.notebooks.azure.net",
   ])
-  bastion_subnet_address_prefix = local.core_services_vnet_subnets[2]
-  core_services_vnet_subnets    = cidrsubnets("10.0.0.0/22", 6, 2, 4, 3)
-  firewall_subnet_address_space = local.core_services_vnet_subnets[1]
+  core_services_vnet_subnets = cidrsubnets("10.0.0.0/22", 6, 2, 4, 3)
   key_vault_endpoints = toset([
     "vaultcore",
   ])
