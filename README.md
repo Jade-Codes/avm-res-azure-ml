@@ -75,12 +75,6 @@ Description: The resource group where the resources will be deployed.
 
 Type: `string`
 
-### <a name="input_shared_subnet_id"></a> [shared\_subnet\_id](#input\_shared\_subnet\_id)
-
-Description: The resource ID of the subnet to associate with the resource.
-
-Type: `string`
-
 ## Optional Inputs
 
 The following input variables are optional (have default values):
@@ -327,6 +321,14 @@ map(object({
 ```
 
 Default: `{}`
+
+### <a name="input_shared_subnet_id"></a> [shared\_subnet\_id](#input\_shared\_subnet\_id)
+
+Description: The resource ID of the subnet to associate with the resource.
+
+Type: `string`
+
+Default: `null`
 
 ### <a name="input_storage_account"></a> [storage\_account](#input\_storage\_account)
 

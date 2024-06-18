@@ -15,11 +15,6 @@ variable "resource_group_name" {
   description = "The resource group where the resources will be deployed."
 }
 
-variable "shared_subnet_id" {
-  type        = string
-  description = "The resource ID of the subnet to associate with the resource."
-}
-
 variable "associated_key_vault" {
   type = object({
     resource_id = string
@@ -250,6 +245,12 @@ A map of role assignments to create on this resource. The map key is deliberatel
 > Note: only set `skip_service_principal_aad_check` to true if you are assigning a role to a service principal.
 DESCRIPTION
   nullable    = false
+}
+
+variable "shared_subnet_id" {
+  type        = string
+  default     = null
+  description = "The resource ID of the subnet to associate with the resource."
 }
 
 variable "storage_account" {
