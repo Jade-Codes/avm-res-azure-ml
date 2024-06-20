@@ -28,7 +28,7 @@ resource "azapi_resource" "this" {
   })
   location  = var.location
   name      = "aml-${var.name}"
-  parent_id = var.resource_group.name
+  parent_id = var.resource_group.id
   tags = {
     vnettype = "managed"
   }
